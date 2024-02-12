@@ -67,7 +67,7 @@ contract RPS is CommitReveal{
         }
     }
 
-    function cancelTransaction() public {
+    function cancelTransaction() external {
         require(block.timestamp > time + 1 days, "You can't cancel the transaction now because it's not 1 day after the transaction");
         if (numPlayer == 0)
         {
