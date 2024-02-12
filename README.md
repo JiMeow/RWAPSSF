@@ -31,3 +31,9 @@
 1. Make the game compatible with 7 choices by adjusting the `_checkWinnerAndPay` function.
 2. Modify the winner logic condition to accommodate the expanded choice set, for example: `((p0Choice + 1) % 7 == p1Choice || (p0Choice + 2) % 7 == p1Choice || (p0Choice + 3) % 7 == p1Choice)` for player 0 win.
 3. Completed!
+
+## Plyer 0 Win, Player 1 Lose
+![P0 win, P1 lose](image.png)
+
+## Draw
+![Draw](image-1.png)
