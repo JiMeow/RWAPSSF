@@ -65,15 +65,12 @@ contract RPS is CommitReveal{
         {
             return;
         }
-        if (numPlayer == 1)
+        else if (numPlayer == 1)
         {
             address payable account = payable(player[msg.sender].addr);
             account.transfer(reward);
-            reward = 0;
-            numPlayer = 0;
-            return;
         }
-        if (numPlayer == 2)
+        else if (numPlayer == 2)
         {
             address payable account0 = payable(indexPlayer[0]);
             address payable account1 = payable(indexPlayer[1]);
@@ -81,29 +78,24 @@ contract RPS is CommitReveal{
             {
                 account0.transfer(reward / 2);
                 account1.transfer(reward / 2);
-                reward = 0;
-                numPlayer = 0;
-                return;
             }
-            if (numReveal == 1)
+            else if (numReveal == 1)
             {
                 if (player[account0].isRevealed)
                 {
                     account0.transfer(reward);
-                    reward = 0;
-                    numPlayer = 0;
-                    return;
                 }
                 if (player[account1].isRevealed)
                 {
                     account1.transfer(reward);
-                    reward = 0;
-                    numPlayer = 0;
-                return;
                 }
             }
-            return;
         }
+        reward = 0;
+        numPlayer = 0;
+        numInput = 0;
+        numReveal = 0;
+        time = 0;
     }
 
     function _checkWinnerAndPay() private {
@@ -127,5 +119,11 @@ contract RPS is CommitReveal{
             account0.transfer(reward / 2);
             account1.transfer(reward / 2);
         }
+
+        reward = 0;
+        numPlayer = 0;
+        numInput = 0;
+        numReveal = 0;
+        time = 0;
     }
 }
