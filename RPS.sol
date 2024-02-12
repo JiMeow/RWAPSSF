@@ -7,7 +7,9 @@ import './CommitReveal.sol';
 contract RPS is CommitReveal{
 
     struct Player {
+        bool isRevealed;
         uint choice;
+        address addr;
         // 0,1,2,3...,5,6 => rock, fire, scissors, sponge, paper, air, water
         bytes32 hashedChoice;
     }
@@ -19,12 +21,18 @@ contract RPS is CommitReveal{
     
     uint public numInput = 0;
     uint public numReveal = 0;
+    uint public time = 0;
 
     function addPlayer() public payable {
         require(numPlayer < 2);
         require(msg.value == 1 ether);
+        if (time == 0)
+        {
+            time = block.timestamp;
+        }
         reward += msg.value;
         indexPlayer[numPlayer] = msg.sender;
+        player[msg.sender].addr = msg.sender;
         numPlayer++;
     }
 
@@ -44,9 +52,57 @@ contract RPS is CommitReveal{
         reveal(bytes32(choice));
         numReveal++;
         player[msg.sender].choice = choice;
+        player[msg.sender].isRevealed = true;
         if (numReveal == 2)
         {
             _checkWinnerAndPay();
+        }
+    }
+
+    function cancelTransaction() public {
+        require(block.timestamp > time + 1 days, "You can't cancel the transaction now because it's not 1 day after the transaction");
+        if (numPlayer == 0)
+        {
+            return;
+        }
+        if (numPlayer == 1)
+        {
+            address payable account = payable(player[msg.sender].addr);
+            account.transfer(reward);
+            reward = 0;
+            numPlayer = 0;
+            return;
+        }
+        if (numPlayer == 2)
+        {
+            address payable account0 = payable(indexPlayer[0]);
+            address payable account1 = payable(indexPlayer[1]);
+            if (numReveal == 0)
+            {
+                account0.transfer(reward / 2);
+                account1.transfer(reward / 2);
+                reward = 0;
+                numPlayer = 0;
+                return;
+            }
+            if (numReveal == 1)
+            {
+                if (player[account0].isRevealed)
+                {
+                    account0.transfer(reward);
+                    reward = 0;
+                    numPlayer = 0;
+                    return;
+                }
+                if (player[account1].isRevealed)
+                {
+                    account1.transfer(reward);
+                    reward = 0;
+                    numPlayer = 0;
+                return;
+                }
+            }
+            return;
         }
     }
 
