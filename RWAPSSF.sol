@@ -38,6 +38,10 @@ contract RPS is CommitReveal{
 
     function input(bytes32 hashedChoice) public  {
         require(numPlayer == 2);
+        if (numInput == 0)
+        {
+            time = block.timestamp;
+        }
         player[msg.sender].hashedChoice = hashedChoice;
         commit(hashedChoice);
         numInput++;
@@ -49,6 +53,10 @@ contract RPS is CommitReveal{
 
     function playerReveal(uint choice) public {
         require(numInput == 2);
+        if (numReveal == 0)
+        {
+            time = block.timestamp;
+        }
         reveal(bytes32(choice));
         numReveal++;
         player[msg.sender].choice = choice;
