@@ -51,13 +51,13 @@ contract RPS is CommitReveal{
         return getSaltedHash(bytes32(choice), bytes32(salt));
     }
 
-    function playerReveal(uint choice) public {
+    function playerReveal(uint choice, uint salt) public {
         require(numInput == 2);
         if (numReveal == 0)
         {
             time = block.timestamp;
         }
-        reveal(bytes32(choice));
+        revealAnswer(bytes32(choice), bytes32(salt));
         numReveal++;
         player[msg.sender].choice = choice;
         player[msg.sender].isRevealed = true;
