@@ -2,48 +2,68 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-contract RPS {
+import './CommitReveal.sol';
+
+contract RPS is CommitReveal{
+
     struct Player {
-        uint choice; // 0 - Rock, 1 - Paper , 2 - Scissors, 3 - undefined
-        address addr;
+        uint choice;
+        // 0,1,2,3...,5,6 => rock, fire, scissors, sponge, paper, air, water
+        bytes32 hashedChoice;
     }
+
     uint public numPlayer = 0;
     uint public reward = 0;
-    mapping (uint => Player) public player;
+    mapping (address => Player) public player;
+    mapping (uint => address) private indexPlayer;
+    
     uint public numInput = 0;
+    uint public numReveal = 0;
 
     function addPlayer() public payable {
         require(numPlayer < 2);
         require(msg.value == 1 ether);
         reward += msg.value;
-        player[numPlayer].addr = msg.sender;
-        player[numPlayer].choice = 3;
+        indexPlayer[numPlayer] = msg.sender;
         numPlayer++;
     }
 
-    function input(uint choice, uint idx) public  {
+    function input(bytes32 hashedChoice) public  {
         require(numPlayer == 2);
-        require(msg.sender == player[idx].addr);
-        require(choice == 0 || choice == 1 || choice == 2);
-        player[idx].choice = choice;
+        player[msg.sender].hashedChoice = hashedChoice;
+        commit(hashedChoice);
         numInput++;
-        if (numInput == 2) {
+    }
+
+    function hashInp(uint choice) external view returns(bytes32){
+        return getHash(bytes32(choice));
+    }
+
+    function playerReveal(uint choice) public {
+        require(numInput == 2);
+        reveal(bytes32(choice));
+        numReveal++;
+        player[msg.sender].choice = choice;
+        if (numReveal == 2)
+        {
             _checkWinnerAndPay();
         }
     }
 
     function _checkWinnerAndPay() private {
-        uint p0Choice = player[0].choice;
-        uint p1Choice = player[1].choice;
-        address payable account0 = payable(player[0].addr);
-        address payable account1 = payable(player[1].addr);
-        if ((p0Choice + 1) % 3 == p1Choice) {
-            // to pay player[1]
-            account1.transfer(reward);
-        }
-        else if ((p1Choice + 1) % 3 == p0Choice) {
+        address p0addr = indexPlayer[0];
+        address p1addr = indexPlayer[1];
+        uint p0Choice = player[p0addr].choice;
+        uint p1Choice = player[p1addr].choice;
+        address payable account0 = payable(p0addr);
+        address payable account1 = payable(p1addr);
+        if ((p0Choice + 1) % 7 == p1Choice || (p0Choice + 2) % 7 == p1Choice || (p0Choice + 3) % 7 == p1Choice) {
             // to pay player[0]
-            account0.transfer(reward);    
+            account0.transfer(reward);
+        }
+        else if ((p1Choice + 1) % 7 == p0Choice || (p1Choice + 2) % 7 == p0Choice || (p1Choice + 3) % 7 == p0Choice) {
+            // to pay player[1]
+            account1.transfer(reward);    
         }
         else {
             // to split reward
