@@ -47,8 +47,8 @@ contract RPS is CommitReveal{
         numInput++;
     }
 
-    function hashInp(uint choice) external view returns(bytes32){
-        return getHash(bytes32(choice));
+    function hashInp(uint choice,uint salt) external view returns(bytes32){
+        return getSaltedHash(bytes32(choice), bytes32(salt));
     }
 
     function playerReveal(uint choice) public {
