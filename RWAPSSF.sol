@@ -7,10 +7,12 @@ import "./CommitReveal.sol";
 contract RPS is CommitReveal {
     struct Player {
         bool isRevealed;
-        uint choice;
+        uint choice1;
+        uint choice2;
         address addr;
         // 0,1,2,3...,5,6 => rock, fire, scissors, sponge, paper, air, water
-        bytes32 hashedChoice;
+        bytes32 hashedChoice1;
+        bytes32 hashedChoice2;
     }
 
     uint public numPlayer = 0;
@@ -34,13 +36,18 @@ contract RPS is CommitReveal {
         numPlayer++;
     }
 
-    function input(bytes32 hashedChoice) public {
+    function input(bytes32 hashedChoice1, bytes32 hashedChoice2) public {
         require(numPlayer == 2);
         if (numInput == 0) {
             time = block.timestamp;
         }
-        player[msg.sender].hashedChoice = hashedChoice;
-        commit(hashedChoice);
+        player[msg.sender].hashedChoice1 = hashedChoice1;
+        player[msg.sender].hashedChoice2 = hashedChoice2;
+
+        bytes32 hashedChoices = keccak256(
+            abi.encodePacked(hashedChoice1, hashedChoice2)
+        );
+        commit(hashedChoices);
         numInput++;
     }
 
@@ -48,14 +55,19 @@ contract RPS is CommitReveal {
         return getSaltedHash(bytes32(choice), bytes32(salt));
     }
 
-    function playerReveal(uint choice, uint salt) public {
+    function playerReveal(uint choice1, uint choice2, uint salt) public {
         require(numInput == 2);
         if (numReveal == 0) {
             time = block.timestamp;
         }
-        revealAnswer(bytes32(choice), bytes32(salt));
+
+        bytes32 hashedChoice1 = getSaltedHash(bytes32(choice1), bytes32(salt));
+        bytes32 hashedChoice2 = getSaltedHash(bytes32(choice2), bytes32(salt));
+        revealAnswer(hashedChoice1, hashedChoice2);
+
         numReveal++;
-        player[msg.sender].choice = choice;
+        player[msg.sender].choice1 = choice1;
+        player[msg.sender].choice2 = choice2;
         player[msg.sender].isRevealed = true;
         if (numReveal == 2) {
             _checkWinnerAndPay();
@@ -95,10 +107,11 @@ contract RPS is CommitReveal {
     }
 
     function _checkWinnerAndPay() private {
+        uint pointP0_P1 = 0;
         address p0addr = indexPlayer[0];
         address p1addr = indexPlayer[1];
-        uint p0Choice = player[p0addr].choice;
-        uint p1Choice = player[p1addr].choice;
+        uint p0Choice = player[p0addr].choice1;
+        uint p1Choice = player[p1addr].choice1;
         address payable account0 = payable(p0addr);
         address payable account1 = payable(p1addr);
         // 0,1,2,3...,5,6 => rock, fire, scissors, sponge, paper, air, water (i already did the 4 problem in first commit in line 117 and 121)
@@ -108,16 +121,38 @@ contract RPS is CommitReveal {
             (p0Choice + 3) % 7 == p1Choice
         ) {
             // to pay player[0]
-            account0.transfer(reward);
+            pointP0_P1 += 2
         } else if (
             (p1Choice + 1) % 7 == p0Choice ||
             (p1Choice + 2) % 7 == p0Choice ||
             (p1Choice + 3) % 7 == p0Choice
         ) {
             // to pay player[1]
+            pointP0_P1 -= 2
+        } 
+        
+        p0Choice = player[p0addr].choice2;
+        p1Choice = player[p1addr].choice2;
+
+        if (
+            (p0Choice + 1) % 7 == p1Choice ||
+            (p0Choice + 2) % 7 == p1Choice ||
+            (p0Choice + 3) % 7 == p1Choice
+        ) {
+            pointP0_P1 += 2
+        } else if (
+            (p1Choice + 1) % 7 == p0Choice ||
+            (p1Choice + 2) % 7 == p0Choice ||
+            (p1Choice + 3) % 7 == p0Choice
+        ) {
+            pointP0_P1 -= 2
+        } 
+
+        if (pointP0_P1 > 0) {
+            account0.transfer(reward);
+        } else if (pointP0_P1 < 0) {
             account1.transfer(reward);
         } else {
-            // to split reward
             account0.transfer(reward / 2);
             account1.transfer(reward / 2);
         }
